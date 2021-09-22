@@ -1,0 +1,202 @@
+;              
+;Character Set Display Utility
+; by Dave Arlington
+; COPYRIGHT 1989 BY ANALOG COMPUTING
+;
+;Global variables and defines
+;
+
+DEFINE RTI="$40",
+       PHA="$48",
+       PLA="$68",
+       TXA="$8A",
+       TAX="$AA",
+       TYA="$98",
+       TAY="$A8",
+       START="6",
+       SELECT="5",
+       OPTION="3"
+	   
+BYTE dindex=$57,   sdmctl=$22F,
+     nmien =$D40E, consol=$D01F,
+     chbase=$D409, chbas =$2F4,
+     color2=$2C6,  colpf2=$D018,
+     rowcrs=$54,   colcrs=$55,
+     crsinh=$2F0,  lmargn=$52,
+     color1=$2C5,  icsta =$353,
+     stick0=$278,  strig0=$284,
+     ch    =$2FC,  iccom =$352,
+     txtrow=$290,  selfiles,
+     wsync =$D40A, count,
+     finish 
+	 
+CARD savmsc=$58,   sdlstl=$230,
+     vdslst=$200,  memtop=$2E5,
+     icbadr=$354,  icblen=$358,
+     txtcol=$291,  RamSet
+	 
+BYTE ARRAY fnames(56), filenm(20),
+           dlspace(512), cset(7),
+           cols=[$7C $4C $8C
+                $6C $2C $5C $9C],
+           dl=[112 112 112 $42 0 0 2
+		   130 $0E 2 2 130 $0E
+		   2 2 130 $0E 2 2 130
+		   $0E 2 2 130 $0E 2 2
+		   130 $0E 2 2 130 $0E
+		   2 $0E 2 $41 0 0]
+            
+INCLUDE "D:CSET2.ACT"             
+
+PROC CIO=$E456(BYTE areg, xreg)
+
+PROC LoadFont(BYTE ARRAY namefile 
+              CARD addr)
+  Close(1)
+  Open(1,namefile,4,0)
+  iccom=7
+  icbadr=addr
+  icblen=1024
+  CIO(0,$10)
+  Close(1)
+RETURN
+
+
+PROC GetFont(CARD addr BYTE filenum)
+                 
+  BYTE letcnt  
+  letcnt=0
+  Zero(filenm,20)
+  IF fnames(filenum*8)#32 THEN
+    filenm(1)='D
+    filenm(2)=':
+    WHILE fnames(filenum*8+letcnt)#32 AND letcnt<8
+    DO
+	  filenm(letcnt+3)=fnames(filenum*8+letcnt)  
+      letcnt==+1
+	OD
+	filenm(0)=letcnt+6
+	filenm(letcnt+3)='.
+    filenm(letcnt+4)='F
+    filenm(letcnt+5)='N
+	filenm(letcnt+6)='T
+    LoadFont(filenm,addr)
+  ELSE
+    MoveBlock(addr,$E000,8)
+  FI
+RETURN
+
+   
+PROC AllocMem()
+      
+  BYTE cnt 
+  CARD temp
+
+  FOR cnt=0 TO 5
+  DO
+    temp=((memtop-$400)&$FC00)
+    cset(cnt)=temp RSH 8
+    memtop=temp
+    GetFont(temp,cnt+1)
+  OD
+  cset(6)=$E0
+  temp=((memtop-$400)&$FC00)
+  chbas=temp RSH 8
+  memtop=temp
+  GetFont(temp,0)
+  savmsc=(memtop-$500)&$F000
+  Zero(savmsc,1280)
+RETURN
+
+
+PROC Dli2()
+  
+  [PHA TXA PHA TYA PHA]
+  count==+1
+  IF count=7 THEN
+    count=0
+  FI
+  colpf2=cols(count)
+  chbase=cset(count)
+  [PLA TAY PLA TAX PLA RTI]
+RETURN
+
+
+PROC DliSetup2()
+
+  nmien=192
+  dlspace==+256
+  dlspace==&$FF00
+  MoveBlock(dlspace,dl,39)
+  dlspace(4)=savmsc&$FF
+  dlspace(5)=savmsc RSH 8
+  dlspace(37)=dlspace&$FF
+  dlspace(38)=dlspace RSH 8
+  sdlstl=dlspace
+  vdslst=Dli2
+RETURN
+
+
+PROC ShowFonts()
+
+  BYTE cnt1, cnt2, cnt3
+  CARD temp
+
+  Graphics(0)
+  ch=255      
+  sdmctl=0
+  AllocMem()
+  crsinh=1
+  color2=$0C
+  color1=2              
+  count=6
+  DliSetup2()
+  sdmctl=34
+  temp=savmsc
+  dindex=0
+  IF selfiles>0 THEN
+    FOR cnt1=0 TO selfiles-1
+    DO                               
+      rowcrs=0
+      colcrs=0
+      FOR cnt2=0 TO 7
+      DO
+	    Put(fnames((cnt1 LSH 3)+cnt2))
+      OD
+      PutE()
+      Print("  ABCDEFGHIJKLMNOPQRST")
+      PrintE("UVWXYZ0123456789")
+      PrintE("  abcdefghijklmnopqrstuvwxyz")
+      savmsc==+160
+    OD
+  FI      
+  savmsc=temp+1120
+  rowcrs=0
+  colcrs=0
+  PrintE(" SPACEBAR  {INV} to select more fonts to view {INV}")
+  savmsc=temp+1200
+  rowcrs=0
+  colcrs=0
+  Print("{INV}{9 spaces}{INV} START {INV}/Trigger to Quit{8 spaces}{INV}")
+  DO
+  UNTIL consol=START OR strig0=0 OR ch=33
+  OD
+  IF ch=33 THEN
+    ch=255
+    finish=1
+  ELSE
+    finish=0
+  FI
+  RETURN
+  
+
+PROC Main()    
+  TitleScreen()
+  finish=0
+  DO
+    FileScreen()
+    ShowFonts()
+  UNTIL finish=0
+  OD
+  Graphics(0)
+RETURN

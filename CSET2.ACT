@@ -1,0 +1,303 @@
+PROC dli1()
+
+  [PHA]
+  chbase=$E0		;go back to ROM set
+  [PLA RTI]
+RETURN
+
+
+PROC DliSetup()
+
+BYTE ARRAY temp
+
+  nmien=192			;enable interrupts
+  temp=sdlstl		;switch sets at
+  temp(14)==+128 	;text window
+  sdmctl=0			;turn display off
+  vdslst=dli1		;call interrupt
+  sdmctl=34			;turn display on
+RETURN
+
+
+PROC TitleScreen()
+
+  Graphics(2)		;all this work to get
+  DliSetup()		;upper and lower case
+  color2=0			;in Graphics 2
+  crsinh=1
+  lmargn=0
+  RamSet=(memtop-$400)&$FC00
+  chbas=RamSet RSH 8
+  memtop=RamSet
+  MoveBlock(RamSet,$E200,512)
+  MoveBlock(RamSet,$E800,8)
+  MoveBlock(RamSet+8,$E100+24,8)
+  MoveBlock(RamSet,$E100+32,8)
+  MoveBlock(RamSet,$E100+152,8)
+  MoveBlock(RamSet,$E100+168,8)
+  rowcrs=3
+  colcrs=5
+  PrintDE(6,"!HARACTER")
+  PrintDE(6,"      #ET")
+  PrintDE(6,"       %ISPLAY")
+  PrintDE(6,"        $TILITY")
+  txtrow=0
+  txtcol=0
+  PrintE("           by Dave Arlington")
+  PrintE("     (c) 1989 for ANALOG Computing")
+  PrintE("")
+  PrintE("  Insert Disk with Fonts, Press {INV}START{INV}")
+  DO
+  UNTIL consol=START or strig0=0
+  OD
+RETURN
+
+
+PROC StashFile(BYTE filenum, col, row)
+
+  BYTE index, cnt, tmp
+  
+  index=(filenum-1)*8
+  FOR cnt=index TO index+7
+  DO
+    temp=Locate(col,row)&$7F
+	IF temp#32 THEN
+	  fnames(cnt)=temp
+	FI
+	col==+1
+  OD
+RETURN
+
+
+PROC MarkFile(BYTE col, row)
+
+  BYTE mark, letter
+  
+  mark=Locate(col,row)
+  IF mark=32 THEN  
+    letter=Locate(col+1,row)
+	IF letter#160 THEN
+	  selfiles==+1
+	  IF selfiles<=7 THEN
+	    color=20
+		Plot(col,row)
+	  ELSE
+	    selfiles=7
+	  FI
+    FI
+  ELSEIF mark=20 THEN
+    selfiles==-1
+    color=32
+    Plot(col,row)
+  FI
+RETURN
+
+
+PROC ClearScreen()
+
+  BYTE crow, ccol, cnt
+
+  color=32
+  FOR crow=1 TO 20
+  DO
+    FOR cnt=0 TO 3
+    DO
+      FOR ccol=cnt*10 to 8+cnt*10
+      DO
+        Plot(ccol,crow)
+      OD
+    OD
+  OD
+RETURN
+
+
+PROC pauz(CARD tim)
+
+  CARD cnt
+
+  FOR cnt=1 TO tim DO OD
+RETURN
+
+
+PROC FlipFlop(BYTE col,row)
+
+  BYTE cnt, letter, let  
+  
+  let=Locate(col,row)
+  FOR cnt=0 TO 7
+  DO
+    IF let#32 THEN
+	  letter=Locate(col+cnt,row)
+	  IF letter#32 THEN
+	    colcrs=col+cnt
+		Put(letter!$80)
+		colcrs=col+cnt+1
+	  FI
+	ELSE
+	  colcrs=col+cnt
+	  Put(let!$80)
+	  colcrs=col+cnt+1
+	FI
+  OD
+RETURN
+
+
+PROC SelectFiles()
+
+  BYTE oldrow, oldcol, mark
+  INT row, col, delay
+  
+  ch=255
+  selfiles=0
+  rowcrs=22
+  colcrs=1
+  SetBlock(fnames,56,32)
+  Print("{INV}SPACE{INV} to view fonts ")
+  Print("/ {INV}RETURN{INV} New Disk")
+  row=1
+  col=1
+  FlipFont(row,col)
+  DO
+    IF consol=SELECT or (stick0&2)=0 THEN
+	  pauz(2500)
+	  oldrow=row
+	  oldcol=col
+	  row==+1
+	  IF row>20 THEN 
+	    row=1
+		col==+10
+		IF col>31 THEN
+		  col=1
+		FI
+	  FI
+	  FlipFont(oldcol,oldrow)
+	  FlipFont(col,row)
+	FI
+	IF consol=OPTION OR (stick0&1)=0 THEN
+	  pauz(2500)
+	  oldrow=row
+	  oldcol=col
+	  row==-1
+	  IF row<1 THEN
+	    row=20
+		col==-10
+		IF col<1 THEN
+		  col=31
+		FI
+	  FI
+	  FlipFlop(oldcol,oldrow)
+	  FlipFlop(col,row)
+	FI
+	IF (stick0&4)=0 THEN
+	  pauz(2500)
+	  oldrow=row
+	  oldcol=col
+	  col==-10
+	  IF col<1 THEN
+	    col=31
+	  FI
+	  FlipFlop(oldcol,oldrow)
+	  FlipFlop(col,row)
+	FI
+	IF (stick0&8)=0 THEN
+	  pauz(2500)
+	  oldrow=row
+	  oldcol=col
+	  col==+10
+	  IF col>31 THEN
+	    col=1
+	  FI
+	  FlipFlop(oldcol,oldrow)
+	  FlipFlop(col,row)
+	FI
+	IF consol=START OR strig0=0 THEN
+	  pauz(10000)
+	  MarkFile(col-1,row)
+	FI
+  UNTIL ch=12 or ch=33
+  OD
+  IF ch=12 or selfiles=0 THEN
+    ClearScreen()
+	rowcrs=22
+	colcrs=1
+	Print(" Insert Disk with Fonts,")
+	Print(" Press {INV}START{INV} ")
+	DO
+	UNTIL consol=START
+	OD
+  ELSE
+    selfiles=0
+    FOR row=1 TO 20
+    DO
+      FOR col=0 TO 30 STEP 10
+      DO
+        mark=Locate(col,row)
+        IF mark=20 THEN
+          selfiles==+1
+          StashFile(selfiles,col+1,row)
+        FI
+      OD
+	OD
+  FI
+RETURN
+
+
+PROC FileScreen()
+
+  BYTE ARRAY name(20)
+  BYTE cnt, row, col, numfiles
+
+  Graphics(0)
+  crsinh=1
+  color2=$52
+  color1=12
+  PrintE("{CTRL-Q}{8 CTRL-R}{CTRL-W}{8 CTRL-R}{CTRL-W}{8 CTRL-R}{CTRL-W}{8 CTRL-R}{CTRL-E}")
+  FOR rowcrs=1 TO 20
+  DO
+    FOR colcrs=9 TO 29 STEP 9
+    DO
+      Put(124)
+    OD
+  OD
+  rowcrs=21
+  colcrs=0
+  PrintE("{CTRL-A}{8 CTRL-R}{CTRL-X}{8 CTRL-R}{CTRL-X}{8 CTRL-R}{CTRL-X}{8 CTRL-R}{CTRL-D}")
+  PrintE("|                                   |")
+  PrintE("{CTRL-Z}{35 CTRL-R}{CTRL-C}")
+  DO
+    numfiles=0
+	Close(1)
+	Open(1,"D:*.FNT",6,0)
+	row=1 col=1
+	rowcrs=row 
+	colcrs=col
+	DO
+	  InputMD(1,name,20)
+	  IF name(3)>64 THEN
+	    numfiles==+1
+		FOR cnt=3 TO 10
+		DO
+		  Put(name(cnt))
+		OD
+		row==+1
+		IF row>20 THEN
+		  row=1
+		  col==+10
+		  IF col>31 THEN
+		    col=0
+		  FI
+		FI
+		rowcrs=row
+		colcrs=col
+	  FI
+	UNTIL icsta>$7F OR numfiles=80
+	OD
+	Close(1)
+	SelectFiles()
+  UNTIL ch=33
+  OD
+  ch=255
+RETURN
+
+
+ 

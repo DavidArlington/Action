@@ -1,0 +1,16 @@
+BYTE tick=20, tock=19   
+
+CARD screen=88, i
+
+PROC benchmark()
+
+  tick=0
+  tock=0   
+  Graphics(24)
+  SetColor(1,0,14)
+  SetColor(2,0,0)
+  SetBlock(screen,7680,255)
+  Graphics(0)
+  i=tick+256*tock
+  PrintF("%E%E%U jiffies %E",i) 
+RETURN
