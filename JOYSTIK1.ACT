@@ -1,0 +1,29 @@
+DEFINE START="6",
+       PRESSED="0"
+       
+BYTE consol=53279, stick0=632,
+     strig0=644
+     
+PROC PrintStickPos(BYTE stik)
+
+  IF (stik&1)=0 THEN
+    Print("Stick is UP    ")
+  ELSEIF (stik&2)=0 THEN
+    Print("Stick is DOWN  ")
+  FI
+  IF (stik&4)=0 THEN
+    Print("Stick is LEFT  ")
+  ELSEIF (stik&8) THEN
+    Print("Stick is RIGHT ")
+  FI
+  PrintE("")
+RETURN
+
+
+PROC Main()
+
+  DO
+    PrintStickPos(stick0)
+    UNTIL consol=START or strig0=PRESSED
+  OD
+RETURN
