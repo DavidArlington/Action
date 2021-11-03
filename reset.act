@@ -1,0 +1,57 @@
+;
+; ACTION! Screen settings routine
+;
+; by Piotr D. Kaczorowski
+;    <piotr.kaczorowski@gmail.com>
+;
+
+DEFINE _color2     = "$02"
+DEFINE _keyclick   = "$FF"
+DEFINE _krepdelay  = "$0F"
+DEFINE _keyrep     = "$08"
+DEFINE _lmargin    = "$00"
+
+CARD dosini_vec    = $0C
+BYTE ARRAY sixpage = $600
+
+;
+; sixpage routine
+;
+BYTE ARRAY code    = [
+  $48              ;  PHA
+  $A9 _color2      ;  LDA #$02
+  $8D $C6 $02      ;  STA $02C6 ;COLOR2
+  $A9 _keyclick    ;  LDA #$FF
+  $8D $DB $02      ;  STA $02DB ;NOCLIK
+  $A9 _krepdelay   ;  LDA #$0F
+  $8D $D9 $02      ;  STA $02D9 ;KRPDER
+  $A9 _keyrep      ;  LDA #$08
+  $8D $DA $02      ;  STA $02DA ;KEYREP
+  $A9 _lmargin     ;  LDA #$00
+  $85 $52          ;  STA $52   ;LMARGN
+  $68              ;  PLA
+  $4C $00 $00      ;  JMP <pholder>
+  $60              ;  RTS
+]
+BYTE code_size     = [30]
+
+; pholder = sixpage + pholder offset
+CARD pholder_vec   = $61B
+
+;
+; Program start
+;
+PROC main()
+
+  ; install code at sixpage
+  MoveBlock(sixpage, code, code_size)
+
+  ; copy old dosini vec to placeholder
+  ; and set new dosini vector
+  ; to sixpage
+  pholder_vec = dosini_vec
+  dosini_vec  = sixpage
+
+  PrintE("done!")
+RETURN
+
