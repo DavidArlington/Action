@@ -1,0 +1,33 @@
+; Two examples of calling machine language routines from your Action! programs
+; First shows how to call an Atari OS built in machine languge routine,
+;                    must be properly set up before calling.
+; Second example shows how to write and call your own machine language 
+;                    procedure in Action!
+DEFINE PHA   ="$48",
+       PLA   ="$68",
+       LDA   ="$A9",
+       STA   ="$8D",
+       STAZ  ="$85",
+       RST   ="$60",
+       ZERO  ="$00"
+       
+BYTE color2=$02C6, lmargn=$52
+
+
+;I don't call this anywhere, this is just an example
+PROC CIOV=$E456(BYTE areg, xreg)
+
+
+PROC SetScreenOptions()
+     [PHA
+      LDA  ZERO
+      STA  color2
+      STAZ lmargn
+      PLA
+      RTS]
+      
+      
+PROC Main()
+
+  SetScreenOptions()
+RETURN
