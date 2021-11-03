@@ -1,0 +1,35 @@
+; Third way to call machine language from Action! using a BYTE ARRAY
+DEFINE PHA   ="$48",
+       PLA   ="$68",
+       LDA   ="$A9",
+       STA   ="$8D",
+       STAZ  ="$85",
+       JMP   ="$4C",
+       RST   ="$60",
+       ZERO  ="$00",
+       LMARGN="$52",
+       PSIX  ="$600"
+       
+BYTE ARRAY ml=
+     [PHA           ;save acc on stack
+      LDA  ZERO     ;load acc with zero
+      STA  $C6 $02  ;put 0 in color2
+                    ; $02C6 in lo hi byte
+      STAZ LMARGN   ;put 0 in left margin
+      PLA           ;restore acc
+      JMP ZERO ZERO ;placeholder addr
+      RTS]          ;return to Action!
+      
+      
+PROC Hijack()
+
+  BYTE dosinil=$0C, dosinih=$0D
+  
+  CARD dosini=$0C
+  
+  ml(10)=dosinil   ;replace placeholder
+  ml(11)=dosinih   ;w original vector
+  MoveBlock(PSIX,,ml,13) ;move ml to page six
+  dosini=PSIX      ;on System Reset, call
+                   ;our ML routine first
+RETURN
