@@ -29,7 +29,7 @@ PROC Hijack()
   
   ml(10)=dosinil   ;replace placeholder
   ml(11)=dosinih   ;w original vector
-  MoveBlock(PSIX,,ml,13) ;move ml to page six
+  MoveBlock(PSIX,ml,13) ;move ml to page six
   dosini=PSIX      ;on System Reset, call
                    ;our ML routine first
 RETURN
