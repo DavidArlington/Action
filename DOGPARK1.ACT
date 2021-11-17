@@ -6,7 +6,7 @@ DEFINE START="6",
        MAXY="23",
        DOGLEFT="60",
        DOGRIGHT="62",
-       BLANK="32
+       BLANK="32"
        
 BYTE stick0=$278, consol=$D01F,
      strig0=$284, dog=[DOGRIGHT],
@@ -48,6 +48,7 @@ PROC CheckMove(BYTE stik)
       curx==-1
     FI
   ELSEIF (stik&8)=0 THEN
+    dog=DOGRIGHT
     IF curx=MAXX THEN
       curx=MINX
     ELSE
