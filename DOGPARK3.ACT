@@ -1,0 +1,139 @@
+DEFINE START="6",
+       PRESSED="0",
+       MINX="0",
+       MINY="0",
+       MAXX="19",
+       MAXY="23",
+       DOGLEFT="$3C",
+       DOGRIGHT="$3E",
+       BLANK="$20",
+       MESS="($3D%$80)"
+       
+BYTE stick0=$278, consol=$D01F,
+     strig0=$284, dog=[DOGRIGHT],
+     curx=[0],    cury=[0],
+     oldx=[0],    oldy=[0],
+     chbas=$2F4
+     
+CARD memtop=$2E5, ramSet
+
+BYTE ARRAY
+   dright=[8 6 255 124 100 164 146 0],
+   dleft=[16 96 255 62 38 37 73 0],
+   sprise=[0 0 0 8 28 62 0 0]
+     
+     
+PROC Delay(CARD pauz)
+
+  CARD ctr
+  
+  FOR ctr=1 TO pauz
+  DO
+    ;
+  OD
+RETURN
+
+
+PROC CheckMove(BYTE stik)
+
+  IF (stik&1)=0 THEN
+    IF cury=MINY THEN
+      cury=MAXY
+    ELSE
+      cury==-1
+    FI
+  ELSEIF (stik&2)=0 THEN
+    IF cury=MAXY THEN
+      cury=MINY
+    ELSE
+      cury==+1
+    FI
+  FI
+  IF (stik&4)=0 THEN
+    dog=DOGLEFT
+    IF curx=MINX THEN
+      curx=MAXX
+    ELSE
+      curx==-1
+    FI
+  ELSEIF (stik&8)=0 THEN
+    dog=DOGRIGHT
+    IF curx=MAXX THEN
+      curx=MINX
+    ELSE
+      curx==+1
+    FI
+  FI
+RETURN
+
+
+PROC MoveDog()
+  IF Locate(oldx,oldy)<>MESS THEN
+    Color=BLANK
+    Plot(oldx,oldy)
+  FI
+  IF Locate(curx,cury)<>MESS THEN
+    Color=dog
+    Plot(curx,cury)
+  FI
+  Delay(2500)
+RETURN
+
+
+PROC PlotMess()
+
+  IF Locate(curx,cury)<>MESS THEN
+    Color=MESS
+    Plot(curx,cury)
+  ELSEIF Locate(curx,cury)=MESS THEN
+    Color=dog
+    Plot(curx,cury)
+  FI
+  Delay(20000)
+RETURN
+
+
+PROC SetChars()
+
+  ramSet=(memtop-$200)&$FE00
+  chbas=ramSet RSH 8
+  memtop=ramSet
+  MoveBlock(ramSet,$E000,$200)
+  MoveBlock(ramSet+(8*28),dleft,8)
+  MoveBlock(ramSet+(8*29),sprise,8)
+  MoveBlock(ramSet+(8*30),dright,8)
+RETURN
+
+
+PROC Setup()
+
+  Graphics(17)
+  SetChars()
+  SetColor(0,0,0)   ; make dog black
+  SetColor(2,3,2)   ; make mess brown
+  SetColor(4,12,15) ; make park green
+  curx=0
+  cury=0
+  oldx=curx
+  oldy=cury
+  Color=dog
+  Plot(curx,cury)
+RETURN
+  
+
+PROC Main()
+
+  Setup()
+  DO
+    oldx=curx
+    oldy=cury
+    CheckMove(stick0)
+    IF oldx<>curx OR oldy<>cury THEN
+      MoveDog()
+    FI
+    IF strig0=PRESSED THEN
+      PlotMess()
+    FI
+  UNTIL consol=START
+  OD
+RETURN
