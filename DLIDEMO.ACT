@@ -1,0 +1,49 @@
+BYTE color1=$2C5,  color2=$2C6,
+     two=$5000,    four=$5001,
+     crsinh=$2F0,  sdmctl=$22F
+     
+CARD savmsc=$58,   sdlist=$230
+
+BYTE ARRAY
+     dl=[$70 $70 $42 $00 $00 $10 $02
+         $02 $02 $02 $02 $02 $02 $02
+         $02 $02 $02 $02 $02 $02 $02
+         $02 $02 $02 $02 $02 $02 $02
+         $02 $42 $00 $50
+         $50 $41 $00 $00],
+     dlspace(128)
+     
+     
+PROC SetupDl()
+
+  dlspace==+$40
+  dlspace==&$FFC0
+  MoveBlock(dlspace,dl,36)
+  dlspace(3)=savmsc&$FF
+  dlspace(4)=savmsv RSH 8
+  dlspace(34)=dlspace&$FF
+  dlspace(35)=dlspace RSH 8
+  sdlist=dlspace
+RETURN
+
+PROC Main()
+
+  BYTE ctr
+  
+  sdmctl=0
+  SetupDl()
+  crsinh=1
+  color1=0
+  color2=14
+  PrintE("Extra graphics row")
+  FOR ctr=1 TO 22
+  DO
+    PrintBE(ctr)
+  OD
+  PrintB(23)
+  two=$12
+  four=$14
+  sdmctl=$22
+  DO
+  OD
+RETURN
