@@ -1,0 +1,118 @@
+DEFINE RTI="$40",
+       PHA="$48",
+       PLA="$68",
+       TXA="$8A",
+       TAX="$AA",
+       TYA="$98",
+       TAY="$A8"
+
+BYTE color1=$2C5,  color2=$2C6,
+     two=$5000,    four=$5001,
+     crsinh=$2F0,  sdmctl=$22F,
+     nmien =$D40E, chbase=$D409,
+     colpf1=$D017, colpf2=$D018,
+     wsync =$D40A, lmargn=$52,
+     iccom =$352,  ramsetHi,
+     flag=[1]
+
+CARD savmsc=$58,   sdlist=$230,
+     vdslst=$200,  icbadr=$354,
+     icblen=$358,  ramSet,
+     memtop=$2E5
+
+BYTE ARRAY
+     dl=[$70 $70 $42 $00 $00 $10 $02
+         $02 $02 $02 $02 $02 $02 $02
+         $02 $02 $02 $82 $10 $02 $02 $02
+         $02 $82 $10 $02 $02 $02 $02 $02
+         $02 $42 $00 $50
+         $50 $41 $00 $00],
+     dlspace(128)
+
+
+PROC Dli()
+
+  [PHA TXA PHA TYA PHA]
+  IF flag=1 THEN
+    wsync=0
+    colpf1=$80
+    colpf2=$8E
+    chbase=ramsetHi
+    flag==+1
+  ELSE
+    wsync=0
+    colpf1=$C0
+    colpf2=$CE
+    chbase=$E0
+    flag=1
+  FI
+  [PLA TAY PLA TAX PLA RTI]
+RETURN
+
+
+PROC CIO=$E456(BYTE areg,xreg)
+
+
+PROC SetChars()
+
+  ramSet=(memtop-$400)&$FC00
+  memtop=ramSet
+  LoadFont()
+  ramsetHi=ramSet RSH 8
+RETURN
+
+
+PROC LoadFont()
+  Close(1)
+  ; File name should be standard Atari font
+  ; 1024 bytes long
+  Open(1,"D3:FLATFOOT.FNT",4,0)
+  iccom=7
+  icbadr=ramSet
+  icblen=$400
+  CIO(0,$10)
+  Close(1)
+RETURN
+  
+
+PROC SetupDl()
+
+  nmien==%$80 ; set hi bit
+  dlspace==+$40
+  dlspace==&$FFC0
+  MoveBlock(dlspace,dl,38)
+  dlspace(3)=savmsc&$FF
+  dlspace(4)=savmsv RSH 8
+  dlspace(36)=dlspace&$FF
+  dlspace(37)=dlspace RSH 8
+  sdlist=dlspace
+  vdslst=Dli
+RETURN
+
+PROC Main()
+
+  BYTE ctr
+
+  sdmctl=0
+  SetChars()
+  SetupDl()
+  crsinh=1
+  lmargn=0
+  color1=0
+  color2=14
+  PrintE("Extra graphics row")
+  FOR ctr=1 TO 22
+  DO
+    PrintBE(ctr)
+  OD
+  PrintB(23)
+  Position(3,13)
+  Print("We changed charsets!")
+  Position(3,18)
+  Print("Back to the original!")
+  two=$12
+  four=$14
+  sdmctl=$22
+  DO
+  OD
+RETURN
