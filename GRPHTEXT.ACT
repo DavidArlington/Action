@@ -1,0 +1,84 @@
+DEFINE chrset="$E000"
+
+BYTE color1=$2C5,  color2=$2C6
+
+CARD savmsc=$58
+
+
+PROC Gr8Draw()
+
+  BYTE ctr
+  
+  Graphics(24)
+  color1=0
+  color2=14
+  Color=1
+  Plot(135,0)
+  DrawTo(135,135)
+  FOR ctr=0 TO 135 STEP 5
+  DO
+    Plot(0,ctr)
+    DrawTo(ctr,135)
+    Sound(0,135-ctr,10,8)
+    Plot(ctr,0)
+    DrawTo(135,ctr)
+  OD
+  Sound(0,0,0,0)
+  Plot(270,0)
+  DrawTo(270,135)
+  FOR ctr=0 TO 135 STEP 5
+  DO
+    Plot(136,ctr)
+    DrawTo(ctr+136,135)
+    Sound(0,270-ctr,10,8)
+    Plot(ctr+136,0)
+    DrawTo(270,ctr)
+  OD
+  Sound(0,0,0,0)
+RETURN
+
+
+BYTE FUNC IntCHr(BYTE chr)
+
+  IF chr<32 THEN
+    chr==+64
+  ELSEIF chr<96 THEN
+    cjr==-32
+  FI
+RETURN(chr)
+
+
+PROC GraphText(BYTE x, y, INT tilt,
+               BYTE ARRAY text)
+               
+   BYTE len, chr
+   
+   CARD chrloc, scrloc, scrrow, chrbyte
+   
+   FOR len=1 TO text(0)
+   DO 
+     chrloc=chrset+IntChr(text(len))*8
+     scrloc=savmsc+x+y*40+len-1
+     FOR chr=0 TO 7
+     DO
+       scrrow=scrloc+chr*40
+       chrbyte=chrloc+chr
+       MoveBlock(scrrow,chrbyte,1)
+     OD
+     y==+tilt
+   OD
+ RETURN
+ 
+ 
+ PROC Main()
+ 
+   Gr8Draw()
+   GraphText(16,120,0,
+             "Here is some Text!")
+   GraphText(2,8,3,
+             "Here is some Text!")
+   GraphText(8,160,-8,
+             "Here is some Text!")
+   DO
+   OD
+ RETURN
