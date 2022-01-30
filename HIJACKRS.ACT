@@ -13,9 +13,14 @@ DEFINE PHA   ="$48",
 BYTE ARRAY ml=
      [PHA           ;save acc on stack
       LDA  ZERO     ;load acc with zero
-      STA  $C6 $02  ;put 0 in color2
-                    ; $02C6 in lo hi byte
+      STA  $C5 $02  ;put 0 in color1 - text black
+                    ; $02C5 in lo hi byte
+      STA  $BE $02  ;put 0 in $02BE - default lower case
       STAZ LMARGN   ;put 0 in left margin
+      LDA  $0E      ;load acc with decimal 14
+      STA  $C6 02   ;put 14 in color 2 - background white
+      LDA  $FF      ;load acc with 255 decimal
+      STAZ $9D      ;switch Action! to Insert mode
       PLA           ;restore acc
       JMP ZERO ZERO ;placeholder addr
       RTS]          ;return to Action!
@@ -27,9 +32,9 @@ PROC Hijack()
   
   CARD dosini=$0C
   
-  ml(10)=dosinil   ;replace placeholder
-  ml(11)=dosinih   ;w original vector
-  MoveBlock(PSIX,ml,13) ;move ml to page six
+  ml(22)=dosinil   ;replace placeholder
+  ml(23)=dosinih   ;w original vector
+  MoveBlock(PSIX,ml,25) ;move ml to page six
   dosini=PSIX      ;on System Reset, call
                    ;our ML routine first
 RETURN
