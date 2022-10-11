@@ -33,7 +33,7 @@
   ; stuff from my one published ACTION! program.
   PROC dli1()  
     [PHA]  
-    hbase=$E0  
+    chbase=$E0  
     [PLA RTI]            
   RETURN
   
